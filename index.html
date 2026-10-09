@@ -177,4 +177,32 @@ var observer=new MutationObserver(function(){['obcolor','brandcolor'].forEach(fu
 observer.observe(document.body,{attributes:true,subtree:true,attributeFilter:['class']});
 ['obcolor','brandcolor'].forEach(window.updateBrandPicker);
 })();
-</script></body></html>
+</script>
+<style id="talos-return-navigation-style">
+.talos-return-nav{position:relative;z-index:20;display:flex;align-items:center;margin:0 0 18px}
+.talos-return-nav button{background:#14243a;border:1px solid #426080;border-radius:11px;color:#f5f9ff;padding:11px 17px;font:700 14px system-ui,sans-serif;cursor:pointer;min-height:44px;box-shadow:0 6px 18px #0003}
+.talos-return-nav button:hover,.talos-return-nav button:focus-visible{background:#1e3857;outline:2px solid #67a6ff;outline-offset:2px}
+@media(max-width:640px){.talos-return-nav button{width:100%}}
+</style>
+<script id="talos-return-navigation-script">
+(function(){
+  function install(){
+    ['setup','login','onboarding'].forEach(function(id){
+      var page=document.getElementById(id);
+      if(!page || page.querySelector('.talos-return-nav'))return;
+      var nav=document.createElement('nav');nav.className='talos-return-nav';nav.setAttribute('aria-label','Page navigation');
+      var btn=document.createElement('button');btn.type='button';btn.textContent='← Back to TALOS Social';
+      btn.addEventListener('click',function(){
+        ['setup','login','onboarding'].forEach(function(name){document.getElementById(name)?.classList.add('hidden')});
+        document.getElementById('workspace')?.classList.add('hidden');
+        document.getElementById('welcome')?.classList.remove('hidden');
+        document.getElementById('welcomeFeatures')?.classList.remove('hidden');
+        window.scrollTo({top:0,behavior:'smooth'});
+      });
+      nav.appendChild(btn);page.insertBefore(nav,page.firstChild);
+    });
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install);else install();
+})();
+</script>
+</body></html>
