@@ -283,7 +283,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   const prefix=onboarding?'ob':'';
   const settings={company_name:get(onboarding?'obname':'brandname'),brand_color:get(onboarding?'obcolor':'brandcolor'),voice:get(onboarding?'obvoice':'voice'),timezone:get(onboarding?'obtimezone':'timezone'),posting_cadence:get(onboarding?'obcadence':'cadence')};
   if(onboarding){settings.team_mode=document.querySelector('input[name="team_mode"]:checked')?.value||'solo';settings.admin_email=get('obadminemail');settings.teammate_email=get('obmemberemail')}
-  return {schema_version:'talos-social-config-v1',exported_at:new Date().toISOString(),workspace:settings,posting_plan:{slots:Array.isArray(posts)?posts:[]}};
+  return {schema_version:'talos-social-config-v2',exported_at:new Date().toISOString(),workspace:settings,posting_plan:{slots:Array.isArray(posts)?posts:[]},content_engine:window.TALOS_CONTENT_ENGINE_V9?window.TALOS_CONTENT_ENGINE_V9.getExport():null};
  }
  function attach(planId,onboarding){const plan=document.getElementById(planId);if(!plan||document.getElementById(planId+'-review'))return;
   const section=document.createElement('section');section.id=planId+'-review';section.className='talos-final-review';section.innerHTML='<h3>Review & finalize</h3><p>Once your workspace and posting plan are ready, review everything in one place. Export a single configuration file only when you need a backup or integration handoff.</p><button type="button" data-review>Review full setup</button><div data-details hidden><pre data-summary></pre><div class="talos-review-actions"><button type="button" data-back>Back to editing</button><button type="button" class="talos-final-export" data-final-export>Download complete configuration</button></div></div>';
@@ -294,6 +294,63 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
  }
  function init(){attach('talos-plan-onboarding',true);attach('talos-plan-settings',false)}
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(init,0));else setTimeout(init,0);
+})();
+</script>
+<style id="talos-authority-v9-css">
+.talos-engine{margin:22px 0;padding:clamp(18px,3vw,30px);border:1px solid #375b83;border-radius:18px;background:linear-gradient(145deg,#10233a,#0b192b);color:#eaf3ff;box-shadow:0 12px 35px #0003}.talos-engine h2{font-size:clamp(22px,2.6vw,29px);margin:6px 0 8px;color:#fff}.talos-engine p{color:#bbcee5;line-height:1.6}.talos-engine .engine-eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#7eb9ff;font-weight:800}.talos-engine-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:18px 0}.talos-engine label{color:#dce9fa}.talos-engine input,.talos-engine select,.talos-engine textarea{background:#091629;border:1px solid #456184;color:#fff;max-width:100%;width:100%;padding:11px;border-radius:9px;margin:8px 0}.talos-engine textarea{min-height:110px}.talos-engine-actions{display:flex;flex-wrap:wrap;gap:10px}.talos-engine button{min-height:46px}.talos-engine .engine-note{font-size:12px;color:#91b0d2}.talos-engine .engine-preview{white-space:pre-wrap;max-height:340px;overflow:auto;border:1px solid #344d6d;border-radius:10px;background:#071323;padding:15px;font-size:12px;line-height:1.6}.talos-engine .engine-check{display:flex;gap:10px;align-items:center;margin:12px 0}.talos-engine .engine-check input{width:auto;margin:0}.talos-engine .engine-status{min-height:20px;color:#94d8bb;font-size:13px;margin-top:10px}@media(max-width:700px){.talos-engine-grid{grid-template-columns:1fr}.talos-engine-actions button{width:100%}}
+</style>
+<script id="talos-authority-v9-js">
+(function(){
+ 'use strict';
+ const KEY='talos_authority_engine_v9';
+ const missions={Monday:'Hiring intelligence and practical talent advice',Tuesday:'North America career spotlight and candidate value',Wednesday:'Cybersecurity, identity and technical talent expertise',Thursday:'Authentic employer brand and team culture',Friday:'Responsible AI, recruiting automation and leadership lessons'};
+ const defaults={persona:'Talent acquisition leader',audience:'Recruiters, hiring managers, candidates, cybersecurity professionals',topics:'Recruiting, cybersecurity talent, identity and fraud prevention, responsible AI in talent acquisition',voice:'Direct, human, practical, evidence-led',history:'',verifiedFacts:'',company:'',careersUrl:'',hashtags:'0-3',requireApproval:true,threeAngles:true,similarityCheck:true,days:Object.keys(missions)};
+ function get(){try{return Object.assign({},defaults,JSON.parse(localStorage.getItem(KEY)||'{}'))}catch(e){return {...defaults}}}
+ function save(x){localStorage.setItem(KEY,JSON.stringify(x))}
+ function esc(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+ function promptFor(day,c){const mission=missions[day]||'Professional expertise and audience value';return `TALOS CONTENT ENGINE v9 | 2026 LINKEDIN PROFESSIONAL RELEVANCE
+
+ROLE: Write one original LinkedIn post for ${c.persona}.
+AUDIENCE: ${c.audience}.
+TOPIC TERRITORY: ${c.topics}.
+VOICE: ${c.voice}.
+COMPANY: ${c.company||'Use only when relevant and verified'}.
+DAY: ${day}. MISSION: ${mission}.
+
+OBJECTIVE: Earn relevant professional attention through expertise, useful detail, credible original perspective and substantive discussion. No reach or algorithm guarantees. Do not mention optimization rules in the post.
+
+EDITORIAL PROCESS (internal, never print):
+1. Generate three genuinely different candidate angles with different professional lessons and openings.
+2. Compare them for audience relevance (25%), original insight (25%), practical value (20%), mobile readability (15%), human voice (10%), and meaningful discussion potential (5%).
+3. Select the best and revise until specific, useful and distinct from recent posts. Never fabricate firsthand experiences, data or current news.
+4. Use a precise first line, short readable paragraphs, natural rhythm and one clear subject. Deliver a decision rule, diagnostic, example or actionable takeaway when appropriate.
+5. Avoid formulaic hooks, generic inspiration, clickbait, engagement bait, artificial controversy, requests for likes or comments, and repetitive three-item lists. No em dashes.
+6. Use zero to three genuinely relevant hashtags, never hashtag stuffing. Do not insert a link unless it serves a verified reader need.
+7. Prefer a substantive question only when it adds to the discussion. No forced closing question.
+8. Use personal or company achievements, customer claims, jobs and statistics ONLY when verified below. Do not assume current job openings or company rankings. Do not disclose confidential information.
+9. Check recent post history for overlap in thesis, hook, framework, example and takeaway; revise for meaningful novelty.
+10. Return only one finished LinkedIn post as plain text. No JSON, preface, title, analysis or score. If impossible, return GENERATION_FAILED.
+
+DAY-SPECIFIC GUIDANCE: ${day==='Tuesday'?'Focus on North America only. If no verified open roles are provided, spotlight the kind of work or candidate decision-making rather than inventing a vacancy. Include the careers URL only when provided and relevant.':day==='Thursday'?'Use genuine, verified employee or employer-brand details. No fabricated testimonials or personal anecdotes.':mission}.
+
+VERIFIED INPUT FOR THIS RUN:
+${c.verifiedFacts||'(none supplied: use evergreen professional knowledge; do not invent current facts)'}
+
+CAREERS URL IF RELEVANT: ${c.careersUrl||'(not supplied)'}
+
+RECENT POST HISTORY:
+${c.history||'(not supplied)'}
+
+FINAL CHECK: Credible, relevant, original, practical, readable, authentic, compliant, and complete.`}
+ function readForm(el){let c=get();for(const k of ['persona','audience','topics','voice','company','careersUrl','verifiedFacts','history']){const input=el.querySelector('[data-eng="'+k+'"]');if(input)c[k]=input.value.trim()}c.requireApproval=el.querySelector('[data-eng="requireApproval"]').checked;c.threeAngles=true;c.similarityCheck=true;save(c);return c}
+ function download(name,data){const blob=new Blob([data],{type:'application/json;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1200)}
+ function render(){if(document.getElementById('talos-engine-v9'))return;const c=get();const target=document.getElementById('dashboard')||document.getElementById('settings')||document.querySelector('main');if(!target)return;const panel=document.createElement('section');panel.id='talos-engine-v9';panel.className='talos-engine';panel.innerHTML=`<span class="engine-eyebrow">TALOS · CONTENT ENGINE v9.0</span><h2>LinkedIn Authority &amp; Reach Engine</h2><p>Configure the instructions that go to Claude. Build audience-specific, useful posts with originality checks, three-angle selection and brand-safe claims. Export prompts for your Make.com or API integration.</p><div class="talos-engine-grid">${[['persona','Author / professional role'],['audience','Target audience'],['topics','Expertise and content pillars'],['voice','Writing voice'],['company','Company or brand'],['careersUrl','Verified careers URL']].map(([k,label])=>`<label>${label}<input data-eng="${k}" value="${esc(c[k])}"></label>`).join('')}</div><label>Verified facts, approved openings or approved source material<textarea data-eng="verifiedFacts" placeholder="Add only current verified details; leave blank for evergreen content">${esc(c.verifiedFacts)}</textarea></label><label>Recent published posts or excerpts (for repetition checks)<textarea data-eng="history" placeholder="Paste recent posts, one per entry">${esc(c.history)}</textarea></label><label class="engine-check"><input type="checkbox" data-eng="requireApproval" ${c.requireApproval?'checked':''}>Require human approval before publishing</label><label>Choose a weekday to preview Claude's instructions<select id="talos-engine-day">${Object.keys(missions).map(d=>`<option>${d}</option>`).join('')}</select></label><div class="talos-engine-actions"><button type="button" data-eng-action="save">Save engine settings</button><button type="button" class="secondary" data-eng-action="preview">Preview Claude prompt</button><button type="button" class="secondary" data-eng-action="copy">Copy selected prompt</button><button type="button" class="secondary" data-eng-action="export">Export all 5 Claude prompts</button></div><p class="engine-note">Exports are configuration files, not automatic changes to Make.com. Your live Claude modules must be updated separately. Existing approval and publishing workflows remain untouched.</p><div class="engine-status" role="status" aria-live="polite"></div><pre class="engine-preview" hidden></pre>`;target.insertAdjacentElement('afterend',panel);
+ const status=t=>panel.querySelector('.engine-status').textContent=t;
+ panel.addEventListener('click',async e=>{const btn=e.target.closest('button[data-eng-action]');if(!btn)return;const action=btn.dataset.engAction,c=readForm(panel),day=panel.querySelector('#talos-engine-day').value,prompt=promptFor(day,c);if(action==='save'){status('Content engine settings saved in this browser.');return}if(action==='preview'){const pre=panel.querySelector('.engine-preview');pre.textContent=prompt;pre.hidden=false;status('Showing '+day+' Claude instructions.');return}if(action==='copy'){try{await navigator.clipboard.writeText(prompt);status(day+' prompt copied.')}catch(e){status('Clipboard unavailable. Use Preview and copy the text manually.')}return}if(action==='export'){download('TALOS_Content_Engine_v9_Claude_Prompts.json',JSON.stringify({schema_version:'talos-content-engine-v9',exported_at:new Date().toISOString(),settings:c,claude_prompts:Object.fromEntries(Object.keys(missions).map(d=>[d,{mission:missions[d],textPrompt:promptFor(d,c),output_format:'plain_text'}]))},null,2));status('Exported five Claude prompts and settings.')}});
+ }
+ function init(){render();const observer=new MutationObserver(()=>{if(!document.getElementById('talos-engine-v9'))render()});observer.observe(document.body,{childList:true,subtree:false})}
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+ window.TALOS_CONTENT_ENGINE_V9={getSettings:get,buildPrompt:day=>promptFor(day,get()),getExport:()=>({schema_version:'talos-content-engine-v9',settings:get(),claude_prompts:Object.fromEntries(Object.keys(missions).map(d=>[d,promptFor(d,get())]))})};
 })();
 </script>
 </body></html>
