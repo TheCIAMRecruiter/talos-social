@@ -371,4 +371,13 @@ FINAL CHECK: Credible, relevant, original, practical, readable, authentic, compl
  window.TALOS_CONTENT_ENGINE_V9={getSettings:get,buildPrompt:day=>promptFor(day,get()),getExport:()=>({schema_version:'talos-content-engine-v9',settings:get(),claude_prompts:Object.fromEntries(Object.keys(missions).map(d=>[d,promptFor(d,get())]))})};
 })();
 </script>
-</body></html>
+<style id="talos-cta-unified-final">
+/* Final specificity override: applies equally to buttons AND the Results anchor. */
+.hero .actions{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:14px!important;align-items:stretch!important;max-width:980px!important;width:100%!important}
+.hero .actions>button,.hero .actions>a.talos-results-cta{display:flex!important;align-items:center!important;justify-content:center!important;min-width:0!important;width:100%!important;min-height:62px!important;height:auto!important;margin:0!important;padding:16px 20px!important;border-radius:14px!important;border:1px solid #75afff!important;box-sizing:border-box!important;font-family:inherit!important;font-size:16px!important;font-weight:800!important;line-height:1.35!important;text-align:center!important;text-decoration:none!important;letter-spacing:0!important;white-space:normal!important;box-shadow:0 5px 0 #092c61,0 12px 26px #0005!important;transition:filter .18s ease,transform .18s ease!important}
+.hero .actions>button:first-child{background:#2679ed!important;color:#fff!important}
+.hero .actions>button.secondary,.hero .actions>a.talos-results-cta{background:#152d4b!important;color:#eef6ff!important;border-color:#7397c7!important}
+.hero .actions>button:hover,.hero .actions>a.talos-results-cta:hover{filter:brightness(1.17)!important;transform:translateY(-2px)!important}
+.hero .actions>a.talos-results-cta:focus-visible{outline:3px solid #9ac6ff;outline-offset:4px}
+@media(max-width:780px){.hero .actions{grid-template-columns:1fr!important;max-width:100%!important}.hero .actions>button,.hero .actions>a.talos-results-cta{min-height:56px!important}}
+</style></body></html>
