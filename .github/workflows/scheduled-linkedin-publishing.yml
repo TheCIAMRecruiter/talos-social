@@ -1,0 +1,24 @@
+name: TALOS scheduled LinkedIn publishing
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  publish-approved:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check for approved posts due to publish
+        env:
+          TALOS_SCHEDULER_SECRET: ${{ secrets.TALOS_SCHEDULER_SECRET }}
+        run: |
+          if [ -z "$TALOS_SCHEDULER_SECRET" ]; then
+            echo "TALOS_SCHEDULER_SECRET is not configured. Publishing is disabled."
+            exit 0
+          fi
+          curl --fail-with-body --silent --show-error --max-time 120 \
+            -X POST 'https://mrgzxokmjxpsdlymxjtc.supabase.co/functions/v1/talos-scheduled-linkedin-worker' \
+            -H "Authorization: Bearer $TALOS_SCHEDULER_SECRET" \
+            -H 'Content-Type: application/json' \
+            --data '{}'
