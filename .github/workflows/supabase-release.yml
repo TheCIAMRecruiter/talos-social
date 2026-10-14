@@ -1,0 +1,42 @@
+name: TALOS Supabase function release
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deploy target (staging is recommended)'
+        required: true
+        type: choice
+        options: [staging, production]
+      function_name:
+        description: 'Supabase function directory under supabase/functions/'
+        required: true
+        type: string
+permissions:
+  contents: read
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    concurrency:
+      group: talos-supabase-${{ inputs.environment }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check deployment inputs
+        env:
+          FUNCTION_NAME: ${{ inputs.function_name }}
+        run: |
+          [[ "$FUNCTION_NAME" =~ ^[a-z0-9][a-z0-9-]*$ ]] || exit 1
+          test -s "supabase/functions/$FUNCTION_NAME/index.ts"
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Deploy selected function
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+          FUNCTION_NAME: ${{ inputs.function_name }}
+        run: |
+          test -n "$SUPABASE_ACCESS_TOKEN"
+          test -n "$PROJECT_REF"
+          supabase functions deploy "$FUNCTION_NAME" --project-ref "$PROJECT_REF"
