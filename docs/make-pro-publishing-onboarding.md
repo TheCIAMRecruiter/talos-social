@@ -25,3 +25,19 @@ join public.talos_workspaces w on w.id=r.workspace_id
 where r.status in ('REQUESTED','IN_PROGRESS')
 order by r.created_at;
 ```
+
+## Make Pro publishing scenario · exact module sequence
+
+Use **one scenario per customer workspace**; never dynamically select a different customer's LinkedIn connection.
+
+1. **Scheduler:** run every 15 minutes (or your desired cadence).
+2. **HTTP > Make a request (claim):** POST to `https://mrgzxokmjxpsdlymxjtc.supabase.co/functions/v1/talos-linkedin-publisher`. Set `Authorization: Bearer <workspace-specific TALOS integration token>` and `Content-Type: application/json`. Body: `{"action":"claim","workspace_id":"<workspace UUID>"}`.
+3. **Filter:** proceed only when `available = true`. If `reason = LINKEDIN_NOT_VERIFIED`, stop; do not publish.
+4. **LinkedIn > Create a user text post:** use the *verified customer's dedicated LinkedIn connection* and the `content` returned by claim. Never use the operator's personal connection. Do not use this text-only route for image posts.
+5. **HTTP > Make a request (complete):** POST to the same endpoint with the same authorization. Body: `{"action":"complete","workspace_id":"<workspace UUID>","job_id":"<claim.job_id>","linkedin_post_urn":"<actual LinkedIn post URN returned by module>"}`.
+6. **LinkedIn error handler:** POST `{"action":"complete","workspace_id":"<workspace UUID>","job_id":"<claim.job_id>","error":"<sanitized error message>"}`. A failed/unknown publish goes to `NEEDS_REVIEW`, **not** automatic retry, because a network failure may happen after LinkedIn accepted the post.
+7. **Operator verification:** compare LinkedIn account identity and workspace, verify a customer-approved test post, then record `CONNECTED` status and member URN through trusted operator access. No browser writes to the connection-status table.
+
+**Security and reliability requirements:** Only issue the workspace-specific token to the corresponding Make scenario; keep it in Make's secret-capable HTTP connection/secure fields, not notes or repository files. Verify the connection before enabling the scenario. Use a single active polling scenario per workspace to avoid duplicate claims. `talos-linkedin-publisher` now rejects claims for workspaces without a verified connection. The completion endpoint only acknowledges an already-claimed job; it does not create a LinkedIn post.
+
+**Operator caution:** Pro has no native dynamic connections; each scenario must be bound to the correct LinkedIn account. If the customer cannot safely authorize the Make connection, keep onboarding pending. Do not ask them to email credentials.
