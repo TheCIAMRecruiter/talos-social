@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TALOS Social | Approval Center</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f5f7fb;color:#12263e;font:16px system-ui,-apple-system,Segoe UI,sans-serif}
+header{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:12px 4%;background:white;border-bottom:1px solid #dbe4f1;gap:10px}
+.brand{grid-column:2;width:clamp(170px,28vw,290px);justify-self:center}.brand img{display:block;width:100%}.back{grid-column:3;justify-self:end;text-decoration:none;color:#245caa;font-weight:650;font-size:14px}
+main{max-width:850px;margin:35px auto;padding:0 18px}.panel{background:white;border:1px solid #dce4ef;border-radius:16px;padding:25px;margin:20px 0;box-shadow:0 7px 25px #16335209}
+h1{font-size:30px;margin:0 0 10px}h2{margin:0 0 12px}p{line-height:1.5;color:#52637a}label{display:block;margin:12px 0 7px;font-weight:650}input,textarea{width:100%;padding:12px;font:inherit;border:1px solid #bdcadc;border-radius:9px}textarea{min-height:190px;resize:vertical}
+button{background:#1859b6;color:white;border:0;border-radius:9px;padding:12px 16px;margin:8px 6px 4px 0;font-weight:650;cursor:pointer}button.secondary{background:#e8eef8;color:#183b6d}button.danger{background:#a72f41}button:disabled{opacity:.5;cursor:wait}
+.hidden{display:none!important}.error{color:#ad2034}.success{color:#176b45}.draft{padding:15px;border:1px solid #dbe4f1;border-radius:9px;margin:10px 0;cursor:pointer}.draft:hover{border-color:#1859b6}.muted{font-size:13px;color:#66768c}#notice{white-space:pre-wrap;min-height:24px}
+@media(max-width:520px){header{padding:10px}.brand{width:clamp(155px,45vw,205px)}.back{font-size:11px}.panel{padding:18px}}
+</style></head>
+<body>
+<header><a class="brand" href="./" aria-label="TALOS Social home"><img src="./assets/talos-social-logo.svg" alt="TALOS Social"></a><a class="back" href="./">Back to TALOS</a></header>
+<main><h1>Approval Center</h1><p>Securely review and approve your LinkedIn content.</p>
+<div id="notice" role="status">Loading authentication…</div>
+<section id="auth" class="panel hidden"><h2>Sign in to TALOS</h2><p>We'll email a secure sign-in link. Only invited workspace members can access drafts.</p><label for="email">Email address</label><input id="email" type="email" autocomplete="email" value=""><button id="signin">Email me a sign-in link</button><p class="muted">If you recently requested several emails, Supabase may temporarily rate-limit new links.</p></section>
+<section id="app" class="hidden"><div class="panel"><h2>Pending approvals</h2><p id="identity" class="muted"></p><div id="queue">Loading drafts…</div><button id="refresh" class="secondary">Refresh</button><button id="signout" class="secondary">Sign out</button></div>
+<div id="editor" class="panel hidden"><h2 id="title">Review draft</h2><p id="meta" class="muted"></p><label for="draft">LinkedIn content</label><textarea id="draft"></textarea><div><button id="save" class="secondary">Save edits</button><button id="approve">Approve</button><button id="rewrite" class="secondary">Request rewrite</button><button id="reject" class="danger">Reject</button></div><p class="muted">Approval creates a publishing job. It does not publish immediately.</p></div></section>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.76.1/dist/umd/supabase.min.js"></script>
+<script>
+(function(){
+'use strict';
+const $=id=>document.getElementById(id);
+function notice(message,error){$('notice').textContent=message;$('notice').className=error?'error':'success';}
+window.addEventListener('error',e=>notice('Page error: '+e.message,true));
+window.addEventListener('unhandledrejection',e=>notice('Connection error: '+(e.reason?.message||e.reason||'Unknown error'),true));
+if(!window.supabase?.createClient){notice('The sign-in library could not load. Please check your connection or browser content blockers.',true);$('auth').classList.remove('hidden');$('signin').disabled=true;return;}
+const client=window.supabase.createClient('https://mrgzxokmjxpsdlymxjtc.supabase.co','sb_publishable_7ObZGAxI8WQm2T0TcLtZuQ_tMN3RlsB',{auth:{persistSession:true,detectSessionInUrl:true,autoRefreshToken:true}});
+let current=null,posts=[];
+function target(){return new URLSearchParams(location.search).get('post')}
+function choose(post){current=post;$('editor').classList.remove('hidden');$('title').textContent=post.topic||'LinkedIn draft';$('meta').textContent='Draft ID: '+post.id;$('draft').value=post.draft_text;history.replaceState(null,'','?post='+encodeURIComponent(post.id));}
+async function load(){const {data,error}=await client.from('talos_posts').select('id,workspace_id,reviewer_id,topic,draft_text,status,created_at').eq('status','PENDING_APPROVAL').order('created_at',{ascending:false});if(error)throw error;posts=data||[];const q=$('queue');q.replaceChildren();if(!posts.length)q.textContent='No pending drafts in your workspaces.';for(const p of posts){const d=document.createElement('div');d.className='draft';d.tabIndex=0;d.textContent=(p.topic||'LinkedIn draft')+' · '+new Date(p.created_at).toLocaleString();d.onclick=()=>choose(p);d.onkeydown=e=>{if(e.key==='Enter')choose(p)};q.append(d)}if(target()){const found=posts.find(p=>p.id===target());if(found)choose(found);else notice('This draft is not available or is no longer pending.',true)}}
+async function boot(){try{const {data:{session},error}=await client.auth.getSession();if(error)throw error;const signed=!!session;$('auth').classList.toggle('hidden',signed);$('app').classList.toggle('hidden',!signed);if(signed){$('identity').textContent=session.user.email||'';notice('Signed in.');await load()}else{notice('Please sign in to continue.')}}catch(e){notice('Authentication error: '+e.message,true);$('auth').classList.remove('hidden')}}
+$('signin').onclick=async()=>{const email=$('email').value.trim();if(!email){notice('Please enter your email.',true);return}const b=$('signin');b.disabled=true;try{const {error}=await client.auth.signInWithOtp({email,options:{emailRedirectTo:'https://talossocial.com/auth/callback.html'}});if(error)throw error;notice('Check your inbox for the new TALOS sign-in link.')}catch(e){notice('Could not send sign-in email: '+e.message,true)}finally{b.disabled=false}};
+$('signout').onclick=async()=>{await client.auth.signOut();location.href='./approvals.html'};
+$('refresh').onclick=async()=>{try{await load();notice('Drafts refreshed.')}catch(e){notice(e.message,true)}};
+async function review(action){if(!current)return;const text=$('draft').value.trim();if(!text){notice('Draft text cannot be empty.',true);return}const btns=['save','approve','rewrite','reject'].map($);btns.forEach(b=>b.disabled=true);try{if(action==='approve'&&text!==current.draft_text){const {error}=await client.rpc('talos_review_post',{p_post_id:current.id,p_action:'edit',p_edited_text:text});if(error)throw error}const {error}=await client.rpc('talos_review_post',{p_post_id:current.id,p_action:action,p_edited_text:action==='edit'?text:null});if(error)throw error;notice({approve:'Approved and queued.',rewrite:'Rewrite requested.',reject:'Draft rejected.',edit:'Edits saved.'}[action]);if(action!=='edit'){$('editor').classList.add('hidden');current=null;history.replaceState(null,'','./approvals.html')}await load()}catch(e){notice('Review failed: '+e.message,true)}finally{btns.forEach(b=>b.disabled=false)}}
+$('save').onclick=()=>review('edit');$('approve').onclick=()=>review('approve');$('rewrite').onclick=()=>review('rewrite');$('reject').onclick=()=>review('reject');
+client.auth.onAuthStateChange((event)=>{if(event==='SIGNED_IN'||event==='SIGNED_OUT')setTimeout(boot,0)});
+boot();
+})();
+</script></body></html>
