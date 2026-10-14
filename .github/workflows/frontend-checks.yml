@@ -1,0 +1,47 @@
+name: TALOS frontend checks
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify required pages
+        run: |
+          test -s index.html
+          test -s approvals.html
+          test -s setup.html
+          test -s studio.html
+      - name: Check inline JavaScript syntax
+        run: |
+          python3 - <<'PY'
+          from html.parser import HTMLParser
+          from pathlib import Path
+          import subprocess, tempfile
+          class Scripts(HTMLParser):
+              def __init__(self): super().__init__(); self.inside=False; self.blocks=[]
+              def handle_starttag(self,tag,attrs):
+                  if tag=='script' and not dict(attrs).get('src'): self.inside=True; self.blocks.append('')
+              def handle_endtag(self,tag):
+                  if tag=='script': self.inside=False
+              def handle_data(self,data):
+                  if self.inside: self.blocks[-1]+=data
+          for name in ('index.html','approvals.html','setup.html','studio.html'):
+              parser=Scripts(); parser.feed(Path(name).read_text())
+              for i,script in enumerate(parser.blocks):
+                  with tempfile.NamedTemporaryFile(mode='w',suffix='.js') as tmp:
+                      tmp.write(script); tmp.flush()
+                      subprocess.run(['node','--check',tmp.name],check=True)
+              print(name, 'JavaScript syntax OK')
+          PY
+      - name: Validate no private keys are embedded
+        run: |
+          if grep -Ein '(SUPABASE_SERVICE_ROLE_KEY|ANTHROPIC_API_KEY|OPENAI_API_KEY)[[:space:]]*[:=][[:space:]]*["\x27][^"\x27]{12,}' index.html approvals.html setup.html studio.html; then
+            echo 'Potential private key embedded in frontend'; exit 1
+          fi
