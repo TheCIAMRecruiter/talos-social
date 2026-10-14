@@ -2,11 +2,6 @@ name: TALOS Supabase function release
 on:
   workflow_dispatch:
     inputs:
-      environment:
-        description: 'Deploy target (staging is recommended)'
-        required: true
-        type: choice
-        options: [staging, production]
       function_name:
         description: 'Supabase function directory under supabase/functions/'
         required: true
@@ -16,9 +11,9 @@ permissions:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment: ${{ inputs.environment }}
+    environment: production
     concurrency:
-      group: talos-supabase-${{ inputs.environment }}
+      group: talos-supabase-production
       cancel-in-progress: false
     steps:
       - uses: actions/checkout@v4
