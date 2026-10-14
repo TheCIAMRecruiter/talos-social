@@ -14,7 +14,7 @@ Deno.serve(async req=>{
  if(input.action==="claim"){
    const {data,error}=await db.rpc("talos_claim_generation_request");
    if(error)return reply({error:error.message},500);
-   if(!data)return reply({job:null});
+   if(!data?.id)return reply({job:null});
    const {data:plan}=await db.from("talos_content_plans").select("company_name,job_title,audience,voice,voice_examples,voice_avoid,topics,posting_days,weekly_themes,content_goal,brand_primary_color,brand_secondary_color,visual_style").eq("workspace_id",data.workspace_id).maybeSingle();
    return reply({job:data,plan:plan||{}});
  }
