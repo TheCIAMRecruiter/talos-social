@@ -59,7 +59,7 @@ html{max-width:100%;scroll-padding-top:92px;-webkit-text-size-adjust:100%}body{m
 #dispatch-list .talos-publish-group{margin:24px 0 12px}
 @media(max-width:950px){#app.workspace-shell{grid-template-columns:1fr;gap:14px}#app.workspace-shell>.side{min-height:0}#compose-view .talos-publishing-section{margin-top:25px}}
 @media(max-width:600px){#talos-main{padding-inline:12px}#app.workspace-shell>.panel{padding:16px}#compose-view .talos-publishing-section{padding:16px 13px;border-radius:13px}.talos-publishing-heading{align-items:flex-start;flex-direction:column;gap:12px}.talos-publishing-heading h2{font-size:20px}#dispatch-list .talos-publish-summary{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}#dispatch-list .talos-publish-card{padding:15px}#dispatch-list .talos-publish-top{flex-direction:column;gap:8px}}
-</style></head>
+</style><style id="talos-publishing-cancel-style">.talos-cancel-publish{background:#fff4f1!important;color:#9a4236!important;border:1px solid #f0d5d0!important}.talos-publish-cancelled{background:#eef0f4;color:#667085}</style></head>
 <body><a class="talos-skip" href="#talos-main">Skip to content</a><nav class="talos-global-nav" aria-label="Main"><div class="talos-nav-inner"><a class="talos-wordmark" href="./"><img src="./assets/talos-social-logo.svg" alt="TALOS Social"></a><button type="button" class="talos-menu-toggle" aria-expanded="false" aria-controls="talos-nav-links">☰ Menu</button><div class="talos-links" id="talos-nav-links"><a href="./">Home</a><a href="./platform.html">Explore the Platform</a><a href="./results.html">Proven Results</a><a href="./approvals.html">Sign in / Dashboard</a></div></div></nav><nav class="talos-member-nav" aria-label="Member tools" hidden inert><div><span>Your workspace</span><a href="./approvals.html" aria-current="page">Dashboard</a><a href="./generate.html">Generate</a><a href="./studio.html">Creative Studio</a><a href="./brand.html">Brand Kit</a><a href="./setup.html">Content Plan</a><a href="./analytics.html">Analytics</a></div></nav>
 <header><a class="brand" href="./" aria-label="TALOS Social home"></a><a class="back" href="./">Back to TALOS</a></header>
 <main id="talos-main"><div class="eyebrow">TALOS / Workspace</div><h1>Content operations</h1><p>Review content, track decisions and keep your publishing workflow moving.</p>
@@ -105,7 +105,7 @@ async function load(){const {data,error}=await client.from('talos_posts').select
  for(const [number,label] of [[counts.QUEUED||0,'Queued'],[counts.SENDING||0,'In progress'],[counts.SUCCEEDED||0,'Published'],[(counts.NEEDS_REVIEW||0)+(counts.FAILED||0),'Needs attention']]){
  const tile=make('div',undefined,'talos-publish-stat');tile.append(make('strong',String(number)),make('span',label));summary.append(tile)
  }el.append(summary);
- const grouped=[['QUEUED','Ready to publish'],['SENDING','In progress'],['NEEDS_REVIEW','Needs attention'],['FAILED','Needs attention'],['SUCCEEDED','Published']];
+ const grouped=[['QUEUED','Ready to publish'],['SENDING','In progress'],['NEEDS_REVIEW','Needs attention'],['FAILED','Needs attention'],['SUCCEEDED','Published'],['CANCELLED','Cancelled']];
  for(const [status,title] of grouped){
  const matching=data.filter(j=>j.status===status);if(!matching.length)continue;
  const heading=make('h3',title,'talos-publish-group');el.append(heading);
@@ -115,7 +115,7 @@ async function load(){const {data,error}=await client.from('talos_posts').select
  info.append(make('h4',p?.topic||'Untitled post'));
  const preview=(p?.approved_text||'').trim();
  if(preview)info.append(make('p',preview.length>175?preview.slice(0,175).trimEnd()+'…':preview,'talos-publish-preview'));
- const badge=make('span',status==='QUEUED'?'Queued':status==='SUCCEEDED'?'Published':status==='SENDING'?'In progress':'Needs review','talos-publish-badge talos-publish-'+status.toLowerCase());
+ const badge=make('span',status==='QUEUED'?'Queued':status==='SUCCEEDED'?'Published':status==='SENDING'?'In progress':status==='CANCELLED'?'Cancelled':'Needs review','talos-publish-badge talos-publish-'+status.toLowerCase());
  top.append(info,badge);card.append(top);
  const meta=make('div',undefined,'talos-publish-meta');
  if(status==='QUEUED'){
@@ -139,11 +139,20 @@ async function load(){const {data,error}=await client.from('talos_posts').select
  try{const {error}=await client.rpc('talos_schedule_approved_post',{p_post_id:j.post_id,p_scheduled_for:date.toISOString()});if(error)throw error;notice('Scheduled for '+date.toLocaleString()+'.');await loadDispatch()}
  catch(e){notice('Scheduling failed: '+e.message,true)}finally{save.disabled=false}
  };
- controls.append(save,cancel);editor.append(label,input,controls);actions.append(schedule);card.append(actions,editor);
+ controls.append(save,cancel);editor.append(label,input,controls);
+ const stop=make('button','Cancel publishing','secondary');
+ stop.onclick=async()=>{
+ if(!confirm('Cancel this queued LinkedIn post? It will not be published automatically. This cannot stop a post that has already started sending.'))return;
+ stop.disabled=true;
+ try{const {error}=await client.rpc('talos_cancel_queued_post',{p_post_id:j.post_id});if(error)throw error;notice('Publishing cancelled. The post was not sent by this action.');await loadDispatch()}
+ catch(e){notice('Could not cancel: '+e.message,true);await loadDispatch().catch(()=>{})}
+ finally{stop.disabled=false}
+ };
+ stop.classList.add('talos-cancel-publish');actions.append(schedule,stop);card.append(actions,editor);
  }else if(status==='SUCCEEDED'){
  meta.textContent='Published'+(j.published_at?' · '+new Date(j.published_at).toLocaleString():'');card.append(meta);
  }else{
- meta.textContent=status==='SENDING'?'Publishing is in progress or needs reconciliation. Please do not retry.':'Check your LinkedIn profile before taking further action.';
+ meta.textContent=status==='SENDING'?'Publishing is in progress or needs reconciliation. Please do not retry.':status==='CANCELLED'?'This post was removed from automatic publishing.':'Check your LinkedIn profile before taking further action.';
  card.append(meta);
  }
  if(j.last_error)card.append(make('p',j.last_error,'talos-publish-error'));
