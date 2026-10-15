@@ -1,0 +1,30 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>TALOS Secure Review</title><style>body{font:16px system-ui;background:#f3f6fc;color:#1b3556;margin:0}header{background:#142d51;color:white;padding:20px}main{max-width:700px;margin:40px auto;padding:26px;background:white;border-radius:15px}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f2f5fa;padding:20px;border-radius:8px}button,a{display:inline-block;padding:12px;margin:10px 8px 0 0;background:#245fb6;color:white;border:0;border-radius:8px;text-decoration:none;cursor:pointer}input{padding:12px;max-width:100%;display:block}#status{padding:12px;background:#eef4ff;border-radius:8px}@media(max-width:600px){main{margin:12px;padding:18px}}</style></head><body><header>TALOS SOCIAL</header><main><h1>Secure post review</h1><p>Review the draft and choose when to publish. Viewing this page never approves a post.</p><p id="status">Validating link…</p><section id="form" hidden><h2 id="topic"></h2><pre id="body"></pre><label>Publish date and time (local)<input id="date" type="datetime-local"></label><button id="approve">Approve &amp; schedule</button><a href="./approvals.html">Open dashboard</a></section></main><script>
+(async()=>{
+const api='https://mrgzxokmjxpsdlymxjtc.supabase.co/functions/v1/talos-email-approval';
+const token=new URLSearchParams(location.search).get('token')||'';
+const status=document.getElementById('status'),form=document.getElementById('form');
+const msg=x=>status.textContent=x;
+if(!/^[a-f0-9]{64}$/.test(token)){msg('Invalid approval link.');return}
+try{
+ const res=await fetch(api+'?mode=preview&token='+encodeURIComponent(token),{cache:'no-store'});
+ const data=await res.json();if(!res.ok)throw Error(data.error||'Invalid link');
+ document.getElementById('topic').textContent=data.topic||'LinkedIn post';
+ document.getElementById('body').textContent=data.body||'';
+ const d=new Date(Date.now()+86400000);
+ document.getElementById('date').value=new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16);
+ form.hidden=false;msg('Link verified. No action has been taken.');
+}catch(e){msg(e.message);return}
+document.getElementById('approve').onclick=async()=>{
+ const input=document.getElementById('date'),date=new Date(input.value);
+ if(!input.value||!Number.isFinite(date.getTime())||date.getTime()<=Date.now()+120000){msg('Choose a future time.');return}
+ if(!confirm('Approve and schedule LinkedIn publishing for '+date.toLocaleString()+'?'))return;
+ const button=document.getElementById('approve');button.disabled=true;
+ try{
+  const res=await fetch(api+'?mode=approve',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({token,scheduled_for:date.toISOString()})});
+  const data=await res.json();if(!res.ok)throw Error(data.error||'Approval failed');
+  form.hidden=true;msg('Approved and scheduled for '+date.toLocaleString());
+  history.replaceState(null,'','./email-review.html');
+ }catch(e){msg(e.message);button.disabled=false}
+};
+})();
+</script></body></html>
